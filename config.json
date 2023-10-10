@@ -1,0 +1,6 @@
+{
+    "path_to_model":"/models/semantic_model.meta",
+    "path_to_ctc_predict":"/tf-end-to-end/ctc_predict.py",
+    "python_path":"/usr/bin/python",
+    "vocabulary_path":"/tf-end-to-end/Data/vocabulary_semantic.txt"
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Viewer</title>
+    <style>
+        /* Add your CSS styles here */
+    </style>
+</head>
+<body>
+    <input type="file" id="fileInput" accept="image/*,application/pdf">
+    <div id="fileDisplayArea"></div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const fileDisplayArea = document.getElementById('fileDisplayArea');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const fileContent = e.target.result;
+                    
+                    // Display the file content here (e.g., for images)
+                    if (file.type.startsWith('image/')) {
+                        fileDisplayArea.innerHTML = `<img src="${fileContent}" alt="Uploaded Image" />`;
+                    }
+                    // For PDFs
+                    else if (file.type === 'application/pdf') {
+                        fileDisplayArea.innerHTML = `<iframe src="${fileContent}" width="100%" height="500px"></iframe>`;
+                    }
+                    // Add more handling for other file types if needed
+                };
+                console.log(file);
+                reader.readAsDataURL(file);
+                filename = file.name;
+                //remove the file type from the filename
+                filename = filename.split('.').slice(0, -1).join('.'); 
+
+                //post to localhost:8889
+                res = fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                });
+
+                
+                    
+            }
+        });
+    </script>
+</body>
+</html>
