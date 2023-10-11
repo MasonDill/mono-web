@@ -77,7 +77,7 @@ def predict(image_path):
         return 'Model path does not exist', 400
     if not os.path.exists(CTC_PREDICT_PATH):
         return 'CTC predict path does not exist', 400
-    if not os.path.exi8891sts(S2M_PATH):
+    if not os.path.exists(S2M_PATH):
         return 'Semantic to MEI path does not exist', 400
     if not os.path.exists(PYTHON_PATH):
         return 'Python path does not exist', 400

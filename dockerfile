@@ -20,4 +20,4 @@ EXPOSE 443
 #start the webserver
 WORKDIR /mono-web
 RUN pip install flask
-CMD ["python3", "app.py"]
+CMD python3 app.py
