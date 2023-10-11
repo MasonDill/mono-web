@@ -117,7 +117,7 @@ def image_to_out(image_path, il, out_type):
     # output_file_path = IL_to_out(il_file_path, il, out_type)
     # print("output file: " +output_file_path)
 
-    return (semantic_file_path)
+    return (semantic_file_path, il_file_path)
 
 if __name__ == '__main__':
     app.run(port=8891, debug=True)
