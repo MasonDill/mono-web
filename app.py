@@ -90,7 +90,10 @@ def predict(image_path):
     semantic_output_file = SEMANTIC_PATH + "temp" +current_ts + ".semantic"
     
     #run the prediction
-    command = PYTHON_P8891tput_file
+    command = PYTHON_PATH + " " + CTC_PREDICT_PATH + " -model " + MODEL_PATH + " -image " + image_path + " -vocabulary " + VOCAB_PATH + " > " + semantic_output_file
+    subprocess.call(command, shell=True)
+
+    return semantic_output_file
 
 def semantic_to_IL(semantic_path, il):
     if not os.path.exists(semantic_path):
