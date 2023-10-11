@@ -77,7 +77,7 @@ def predict(image_path):
         return 'Model path does not exist', 400
     if not os.path.exists(CTC_PREDICT_PATH):
         return 'CTC predict path does not exist', 400
-    if not os.path.exists(S2M_PATH):
+    if not os.path.exi8891sts(S2M_PATH):
         return 'Semantic to MEI path does not exist', 400
     if not os.path.exists(PYTHON_PATH):
         return 'Python path does not exist', 400
@@ -90,10 +90,7 @@ def predict(image_path):
     semantic_output_file = SEMANTIC_PATH + "temp" +current_ts + ".semantic"
     
     #run the prediction
-    command = PYTHON_PATH + " " + CTC_PREDICT_PATH + " -model " + MODEL_PATH + " -image " + image_path + " -vocabulary " + VOCAB_PATH + " > " + semantic_output_file
-    subprocess.call(command, shell=True)
-
-    return semantic_output_file
+    command = PYTHON_P8891tput_file
 
 def semantic_to_IL(semantic_path, il):
     if not os.path.exists(semantic_path):
@@ -134,4 +131,4 @@ def image_to_out(image_path, il, out_type):
     return (semantic_file_path, il_file_path + '.xml')
 
 if __name__ == '__main__':
-    app.run(port=8891, debug=True)
+    app.run(port=443, debug=True)

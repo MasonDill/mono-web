@@ -15,7 +15,7 @@ RUN python3 get-pip.py
 #Install music21
 RUN python3 -m pip install music21
 
-EXPOSE 8891
+EXPOSE 443
 
 #start the webserver
 WORKDIR /mono-web
