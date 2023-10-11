@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
 import os
 import sys
 from datetime import datetime
@@ -47,7 +47,10 @@ def upload_file():
 
     # generate the output file
     results = image_to_out(input_file_path, 'musicxml', 'il')
-    print(results)
+
+    send_file(results[0], as_attachment=True)
+    
+    # return the files to the user
     return 'File uploaded successfully', 200
 
 def get_timestamp():
