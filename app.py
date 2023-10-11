@@ -24,6 +24,10 @@ def tar_files(files):
     subprocess.call(command, shell=True)
     return tar_file_path
 
+def remove_files(files):
+    for file in files:
+        os.remove(file)
+
 @app.route('/')
 def home():
     return render_template('upload.html')
@@ -56,6 +60,9 @@ def upload_file():
 
     #tar ball the results    
     tar_file_path = tar_files(results)
+
+    #remove the files
+    remove_files(results)
 
     # return the files to the user
     return send_file(tar_file_path, as_attachment=True)
@@ -124,7 +131,7 @@ def image_to_out(image_path, il, out_type):
     # output_file_path = IL_to_out(il_file_path, il, out_type)
     # print("output file: " +output_file_path)
 
-    return (semantic_file_path, il_file_path)
+    return (semantic_file_path, il_file_path + '.xml')
 
 if __name__ == '__main__':
     app.run(port=8891, debug=True)
