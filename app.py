@@ -99,7 +99,7 @@ def semantic_to_IL(semantic_path, il):
     current_ts = get_timestamp()
     il_output_file = IL_PATH + "temp" +current_ts
     print(il_output_file)
-    command = PYTHON3_PATH + " " + S2M_PATH + " " + semantic_path + " -type" +il +" -o " + il_output_file
+    command = PYTHON3_PATH + " " + S2M_PATH + " " + semantic_path + " -type " +il +" -o " + il_output_file
     subprocess.call(command, shell=True)
 
     return il_output_file
