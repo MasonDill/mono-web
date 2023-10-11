@@ -17,7 +17,7 @@ OUT_PATH = "/temp/out/"
 
 app = Flask(__name__)
 
-def tar__files(files):
+def tar_files(files):
     timestamp = get_timestamp()
     tar_file_path = "temp" +timestamp +".tar.gz"
     command = "tar -czvf " +tar_file_path +" " +(files[0]) + " " +(files[1])
