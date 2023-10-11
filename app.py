@@ -17,6 +17,12 @@ OUT_PATH = "/temp/out/"
 
 app = Flask(__name__)
 
+def tar__files(files):
+    timestamp = get_timestamp()
+    tar_file_path = "temp" +timestamp +".tar.gz"
+    command = "tar -czvf " +tar_file_path +" " +(files[0]) + " " +(files[1])
+    subprocess.call(command, shell=True)
+    return tar_file_path
 
 @app.route('/')
 def home():
@@ -48,10 +54,11 @@ def upload_file():
     # generate the output file
     results = image_to_out(input_file_path, 'musicxml', 'il')
 
-    send_file(results[0], as_attachment=True)
-    
+    #tar ball the results    
+    tar_file_path = tar_files(results)
+
     # return the files to the user
-    return 'File uploaded successfully', 200
+    return send_file(tar_file_path, as_attachment=True)
 
 def get_timestamp():
     date_string =  datetime.now().strftime("%Y%m%d%H%M%S")
