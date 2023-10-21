@@ -3,17 +3,10 @@ import os
 import sys
 from datetime import datetime
 import subprocess
+import json
 
-MODEL_PATH = "/models/semantic_model.meta"
-CTC_PREDICT_PATH = "/tf-end-to-end/ctc_predict.py"
-S2M_PATH = "/semantic_to_mei/semantic_to_mei.py"
-PYTHON_PATH = "/usr/bin/python"
-PYTHON3_PATH = "/usr/bin/python3"
-VOCAB_PATH = "/tf-end-to-end/Data/vocabulary_semantic.txt"
+MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, PYTHON_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH = None, None, None, None, None, None, None, None, None
 
-SEMANTIC_PATH = "/temp/semantic/"
-IL_PATH = "/temp/IL/"
-OUT_PATH = "/temp/out/"
 
 app = Flask(__name__)
 
@@ -35,10 +28,12 @@ def home():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    
     if 'file' not in request.files:
         return 'No file uploaded', 400
 
     file = request.files['file']
+    print(file)
 
     if file.filename == '':
         return 'No selected file', 400
@@ -52,7 +47,8 @@ def upload_file():
 
     # save the file
     input_file_path = os.path.join('uploads', file.filename)
-
+    print(input_file_path)
+    
     file.save(input_file_path)
 
     # generate the output file
@@ -72,20 +68,6 @@ def get_timestamp():
     return ''.join(filter(str.isdigit, date_string))
 
 def predict(image_path):
-    #check that the constant file paths exist
-    if not os.path.exists(MODEL_PATH):
-        return 'Model path does not exist', 400
-    if not os.path.exists(CTC_PREDICT_PATH):
-        return 'CTC predict path does not exist', 400
-    if not os.path.exists(S2M_PATH):
-        return 'Semantic to MEI path does not exist', 400
-    if not os.path.exists(PYTHON_PATH):
-        return 'Python path does not exist', 400
-    if not os.path.exists(VOCAB_PATH):
-        return 'Vocabulary path does not exist', 400
-    if not os.path.exists(image_path):
-        return 'Image file does not exist', 400
-    
     current_ts = get_timestamp()
     semantic_output_file = SEMANTIC_PATH + "temp" +current_ts + ".semantic"
     
@@ -95,14 +77,7 @@ def predict(image_path):
 
     return semantic_output_file
 
-def semantic_to_IL(semantic_path, il):
-    if not os.path.exists(semantic_path):
-        return 'Semantic file does not exist', 400
-    if not os.path.exists(S2M_PATH):
-        return 'Semantic to MEI path does not exist', 400
-    if not os.path.exists(PYTHON_PATH):
-        return 'Python path does not exist', 400
-    
+def semantic_to_IL(semantic_path, il):    
     current_ts = get_timestamp()
     il_output_file = IL_PATH + "temp" +current_ts
     print(il_output_file)
@@ -111,12 +86,7 @@ def semantic_to_IL(semantic_path, il):
 
     return il_output_file
 
-def IL_to_out(IL_file, IL, out_type):
-    if not os.path.exists(IL_file):
-        return 'IL file does not exist', 400
-    if not os.path.exists(PYTHON_PATH):
-        return 'Python path does not exist', 400
-    
+def IL_to_out(IL_file, IL, out_type):    
     timestamp = get_timestamp()
     output_filepath = OUT_PATH + "temp" +timestamp
 
@@ -134,4 +104,27 @@ def image_to_out(image_path, il, out_type):
     return (semantic_file_path, il_file_path + '.xml')
 
 if __name__ == '__main__':
-    app.run(port=443, debug=True)
+    # Read the file paths from config.json
+    with open('config.json') as json_file:
+        data = json.load(json_file)
+        MODEL_PATH = data['model_path']
+        CTC_PREDICT_PATH = data['ctc_predict_path']
+        S2M_PATH = data['S2M_path']
+        PYTHON_PATH = data['python_path']
+        PYTHON3_PATH = data['python3_path']
+        VOCAB_PATH = data['vocab_path']
+        temp_path = data['temp_path']
+
+    SEMANTIC_PATH = temp_path + "/semantic/"
+    IL_PATH = temp_path + "/il/"
+    OUT_PATH = temp_path + "/out/"
+
+    # Validate the file paths
+    for path in [MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, PYTHON_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH]:
+        if not os.path.exists(path):
+            print("Path does not exist: \"" +path +"\"")
+            if(input("Would you like to make it an continue? [Y/n] ") == 'n'):
+                sys.exit(1)
+            os.makedirs(path)
+
+    app.run(port=8890, debug=True)
