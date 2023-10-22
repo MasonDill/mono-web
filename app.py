@@ -144,4 +144,4 @@ if __name__ == '__main__':
             if(input("Would you like to continue? [y/N] ") != 'y'):
                 sys.exit(1)
 
-    app.run(port=8890, debug=True)
+    app.run(host='0.0.0.0', port=8890)
