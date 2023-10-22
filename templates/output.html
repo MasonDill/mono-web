@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flask Example</title>
+</head>
+<body>
+    <h1>Input</h1>
+    <img src="/retrieve{{ input_image_path }}" alt="Image">
+    <br>
+    <h1>Model Prediction as MEI</h1>
+    <img src="/retrieve{{ output_image_path }}" alt="Image">
+    <br>
+    <h1>Audio</h1>
+    <br>
+    <audio controls>
+        <source src="/retrieve{{ output_audio_path }}" type="audio/wav">
+        Your browser does not support the audio element.
+    </audio>
+</body>
+</html>

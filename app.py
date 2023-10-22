@@ -1,11 +1,12 @@
 from flask import Flask, request, render_template, send_file
 import os
 import sys
+import time
 from datetime import datetime
 import subprocess
 import json
 
-MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, PYTHON_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None
+IMAGE_PATH, MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None, None
 
 
 app = Flask(__name__)
@@ -25,6 +26,14 @@ def remove_files(files):
 def home():
     return render_template('upload.html')
 
+@app.route('/retrieve/<path:path>')
+def generate_image(path):
+    return send_file("/" +path)
+
+@app.route('/delete/<path:path>')
+def delete_file(path):
+    os.remove("/" +path)
+    return "Deleted", 200
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -51,17 +60,10 @@ def upload_file():
     file.save(input_file_path)
 
     # generate the output file
-    results = image_to_out(input_file_path, 'mei', 'il')
+    results = image_to_out(input_file_path, 'mei', 'wav')
 
-    #tar ball the results    
-    #tar_file_path = tar_files(results)
-
-    #remove the files
-    #remove_files(results)
-
-    # return the files to the user
-    #return send_file(tar_file_path, as_attachment=True)
-    return 200
+    # Render the output html
+    return render_template('output.html', input_image_path=input_file_path, output_image_path=results[2], output_audio_path=results[3])
 
 def get_timestamp():
     date_string =  datetime.now().strftime("%Y%m%d%H%M%S")
@@ -84,23 +86,36 @@ def semantic_to_IL(semantic_path, il):
     if il == "mei":
         command = VEROVIO_PATH + " -t mei -o " + il_output_file +" " + il_output_file +".xml"
         print(subprocess.call(command, shell=True))
+        os.remove(il_output_file +".xml")
 
     return il_output_file
 
 def IL_to_out(IL_file, IL, out_type):    
     timestamp = get_timestamp()
-    output_filepath = OUT_PATH + "temp" +timestamp
+    output_filepath = OUT_PATH + "temp" +timestamp + "." +out_type
 
-    #TODO: run the image to out command
+    command = PYTHON3_PATH + " " +AUDIO_GENERATOR_PATH + " " + IL_file + "." + IL + " -out " + output_filepath
+    print(command)
+    print(subprocess.call(command, shell=True))
+
     return output_filepath
+
+def IL_to_image(IL_file, IL):
+    timestamp = get_timestamp()
+    image_filepath = IMAGE_PATH + "temp" +timestamp + ".svg"
+
+    command = VEROVIO_PATH + " -t svg -o " + image_filepath +" --page-height 500 " + IL_file + "." + IL
+    print(subprocess.call(command, shell=True))
+
+    return image_filepath
 
 def image_to_out(image_path, il="mei", out_type="wav"):
     semantic_file_path = predict(image_path)
     il_file_path = semantic_to_IL(semantic_file_path, il)
+    image_file_path = IL_to_image(il_file_path, il)
+    output_file_path = IL_to_out(il_file_path, il, out_type)
 
-    #output_file_path = IL_to_out(il_file_path, il, out_type)
-
-    return (semantic_file_path, il_file_path + '.' +il)
+    return (semantic_file_path, il_file_path + '.' +il, image_file_path, output_file_path)
 
 if __name__ == '__main__':
     # Read the file paths from config.json
@@ -110,6 +125,7 @@ if __name__ == '__main__':
         CTC_PREDICT_PATH = data['ctc_predict_path']
         S2M_PATH = data['S2M_path']
         VEROVIO_PATH = data['verovio_path']
+        AUDIO_GENERATOR_PATH = data['audio_generator_path']
         PYTHON_PATH = data['python_path']
         PYTHON3_PATH = data['python3_path']
         VOCAB_PATH = data['vocab_path']
@@ -119,13 +135,13 @@ if __name__ == '__main__':
     SEMANTIC_PATH = temp_path + "/semantic/"
     IL_PATH = temp_path + "/il/"
     OUT_PATH = temp_path + "/out/"
+    IMAGE_PATH = temp_path + "/images/"
 
     # Validate the file paths
-    for path in [MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, PYTHON_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH]:
+    for path in [MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, IMAGE_PATH, OUT_PATH, temp_path, UPLOAD_PATH ]:
         if not os.path.exists(path):
             print("Path does not exist: \"" +path +"\"")
-            if(input("Would you like to make it an continue? [y/N] ") != 'y'):
+            if(input("Would you like to continue? [y/N] ") != 'y'):
                 sys.exit(1)
-            #os.makedirs(path)
 
     app.run(port=8890, debug=True)
