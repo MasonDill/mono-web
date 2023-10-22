@@ -53,6 +53,18 @@ def upload_file():
     if not os.path.exists('uploads'):
         os.makedirs('uploads')
 
+    # clean up old files
+    for old_file in os.listdir('uploads'):
+        os.remove(os.path.join('uploads', old_file))
+    for old_file in os.listdir('temp/semantic'):
+        os.remove(os.path.join('temp/semantic', old_file))
+    for old_file in os.listdir('temp/il'):
+        os.remove(os.path.join('temp/il', old_file))
+    for old_file in os.listdir('temp/out'):
+        os.remove(os.path.join('temp/out', old_file))
+    for old_file in os.listdir('temp/images'):
+        os.remove(os.path.join('temp/images', old_file))
+
     # save the file
     input_file_path = os.path.join(UPLOAD_PATH, file.filename)
     
