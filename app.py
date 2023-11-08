@@ -6,8 +6,12 @@ from datetime import datetime
 import subprocess
 import json
 
-IMAGE_PATH, MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None
+from PIL import Image
+import io
+import base64
 
+IMAGE_PATH, MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None
+HOME_PATH = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__)
 
@@ -35,46 +39,12 @@ def delete_file(path):
     os.remove("/" +path)
     return "Deleted", 200
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    
-    if 'file' not in request.files:
-        return 'No file uploaded', 400
-
-    file = request.files['file']
-
-    if file.filename == '':
-        return 'No selected file', 400
-
-    if os.path.exists(file.filename):
-        return 'File already exists', 400
-
-    # check if uploads exist
-    if not os.path.exists('uploads'):
-        os.makedirs('uploads')
-
-    # clean up old files
-    for old_file in os.listdir('uploads'):
-        os.remove(os.path.join('uploads', old_file))
-    for old_file in os.listdir('temp/semantic'):
-        os.remove(os.path.join('temp/semantic', old_file))
-    for old_file in os.listdir('temp/il'):
-        os.remove(os.path.join('temp/il', old_file))
-    for old_file in os.listdir('temp/out'):
-        os.remove(os.path.join('temp/out', old_file))
-    for old_file in os.listdir('temp/images'):
-        os.remove(os.path.join('temp/images', old_file))
-
-    # save the file
-    input_file_path = os.path.join(UPLOAD_PATH, file.filename)
-    
-    file.save(input_file_path)
+@app.route('/example/', methods=['GET'])
+def rem_file():
+    input_file_path = os.path.join(temp_path, "handwritten.jpeg")
 
     # generate the output file
     results = image_to_out(input_file_path, 'mei', 'wav')
-
-    if results is None:
-        return 'Error generating output', 500
     
     # read the semantic file
     semantic_file = open(results[0], 'r')
@@ -90,6 +60,61 @@ def upload_file():
 
     # Render the output html
     return render_template('output.html', input_image_path=input_file_path, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei)
+
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    # Access the data URL from the form
+    data_url = request.form.get('image_data')
+
+    if data_url:
+        try:
+            # Decode the base64 data URL to bytes
+            image_data = base64.b64decode(data_url.split(',')[1])
+
+            # Create a PIL (Pillow) image from the decoded bytes
+            image = Image.open(io.BytesIO(image_data))
+
+        except Exception as e:
+            return "Error while processing the image: " + str(e), 400
+    else:
+        return "No image data received.", 400
+    
+    # clean up old files
+    os.chdir(HOME_PATH)
+    for old_file in os.listdir('uploads'):
+        os.remove(os.path.join('uploads', old_file))
+    for old_file in os.listdir('temp/semantic'):
+        os.remove(os.path.join('temp/semantic', old_file))
+    for old_file in os.listdir('temp/il'):
+        os.remove(os.path.join('temp/il', old_file))
+    for old_file in os.listdir('temp/out'):
+        os.remove(os.path.join('temp/out', old_file))
+    for old_file in os.listdir('temp/images'):
+        os.remove(os.path.join('temp/images', old_file))
+
+     # Save the image to a file
+    temp_image_filepath = str(UPLOAD_PATH) + "/temp"
+    temp_image_filepath += get_timestamp() + ".png"
+    image.save(temp_image_filepath)  # Adjust the filename and format as needed
+
+    # generate the output file
+    results = image_to_out(temp_image_filepath, 'mei', 'wav')
+    
+    # read the semantic file
+    semantic_file = open(results[0], 'r')
+    semantic = semantic_file.read()
+    semantic_file.close()
+    semantic = semantic.strip()
+    semantic = semantic.replace('\n', '\t')
+
+    #read the mei file
+    mei_file = open(results[1], 'r')
+    mei = mei_file.read()
+    mei_file.close()
+
+    # Render the output html
+    return render_template('output.html', input_image_path=temp_image_filepath, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei)
 
 def get_timestamp():
     date_string =  datetime.now().strftime("%Y%m%d%H%M%S")
@@ -158,25 +183,25 @@ def IL_to_image(IL_file, IL):
 def image_to_out(image_path, il="mei", out_type="wav"):
     semantic_file_path = predict(image_path)
     if not os.path.exists(semantic_file_path): 
-        return None
+        return (None, None, None, None)
     
     il_file_path = semantic_to_IL(semantic_file_path, il)
     if not os.path.exists(il_file_path+".mei"): 
-        return None
+        return (semantic_file_path, None, None, None)
     
     image_file_path = IL_to_image(il_file_path, il)
     if not os.path.exists(image_file_path):
-        return None
+        return (semantic_file_path, il_file_path + '.' +il, None, None)
     
     output_file_path = IL_to_out(il_file_path, il, out_type)
     if not os.path.exists(output_file_path):
-        return None
+        return (semantic_file_path, il_file_path + '.' +il, image_file_path, None)
 
     return (semantic_file_path, il_file_path + '.' +il, image_file_path, output_file_path)
 
 if __name__ == '__main__':
     # Read the file paths from config.json
-    with open('config.json') as json_file:
+    with open(HOME_PATH +'/config.json') as json_file:
         data = json.load(json_file)
         MODEL_PATH = data['model_path']
         CTC_PREDICT_PATH = data['ctc_predict_path']
@@ -200,4 +225,4 @@ if __name__ == '__main__':
             if(input("Would you like to continue? [y/N] ") != 'y'):
                 sys.exit(1)
 
-    app.run(host='0.0.0.0', port=8890)
+    app.run(host='0.0.0.0', port=8890, debug=False)

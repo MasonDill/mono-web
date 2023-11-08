@@ -1,13 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>OMR File Upload</title>
+    <title>OMR File Upload with Image Cropping</title>
+    <!-- Add Bootstrap CSS link -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Add Cropper.js CSS and JS links -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.11/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.11/cropper.min.js"></script>
+    <style>
+        /* Custom CSS to make content wider */
+        body {
+            width: auto; /* Set the width as desired */
+            height: auto; /* Set the height as desired */
+            font: 15px arial;
+            margin: 0 auto; /* Center the content horizontally */
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: auto;
+            background-color: #f5f5f5;
+        }
+        .preview-txt {
+            position: center;
+            font: 50px times;
+            color: #000;
+        }
+    </style>
 </head>
 <body>
-    <h1>Upload a file</h1>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <input type="submit" value="Upload">
-    </form>
+    <div class="container mt-5 wider-content"> <!-- Apply the custom class to the content container -->
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h1 class="text-center">Upload and Crop an Image</h1>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="file">Choose a File:</label>
+                                <input type="file" accept="image/*" class="form-control-file" name="file" id="file">
+                            </div>
+                            <div class="text-center">
+                                <h3>Or</h3>
+                                <label>Take a Picture:</label>
+                                <input type="file" accept="image/*" capture="environment" class="form-control-file" name="camera_input" id="camera_input">
+                                <canvas id="camera_input" style="display: none;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    </div>
+    <div class="container mt-5 wider-content">
+        <form method="POST" action="/upload" enctype="multipart/form-data" name="pform" id="pform">
+            <!-- Add an image preview and cropping area -->
+            <div class="form-group mt-3">
+                <div class="image-container" hidden="true">
+                    <hr>
+                    <p class="preview-txt">Image Preview</p>
+                    <img id="croppedImage" alt="Cropped Image">
+                    <input type="hidden" name="image_data" id="image_data" hidden="true">
+                </div>
+            </div>
+            <br>
+            <div class="text-center mt-3">
+                <button type="submit" class="btn btn-primary" onclick="submitCroppedImages()">Upload and Process</button>
+            </div>
+        </form>
+    </div> 
+    <footer class="mt-5">
+        <hr>
+        <p class="text-center"></p>
+        <p class="text-center"> Website Source Code: <a href="https://github.com/MasonDill/mono-web">https://github.com/MasonDill/mono-web</a></p>
+        <p class="text-center"> OMR Source Code: <a href="https://github.com/MasonDill/tf-end-to-end">https://github.com/MasonDill/tf-end-to-end</a></p>
+        <p class="text-center"> Published OMR Models: <a href="https://huggingface.co/MasonDill/Monophonic_OMR">https://huggingface.co/MasonDill/Monophonic_OMR</a></p>
+    </footer>
+    <!-- Add Bootstrap JS and jQuery links for enhanced functionality -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function handleImageChange(input) {
+            const file = input.files[0];
+            if (file) {
+                image.hidden = false;
+                
+                // Add some flavor text to the image container
+                const imageContainer = document.getElementsByClassName('image-container')[0];
+                imageContainer.hidden = false;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    image.src = e.target.result;
+                    cropper.replace(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function openCameraInput() {
+            // Trigger the click event on the camera input element
+            const cameraInput = document.getElementById('camera_input');
+            cameraInput.click();
+        }
+        
+        // Initialize Cropper.js and add the event listener for the 'file' input
+        const image = document.getElementById('croppedImage');
+        const cropper = new Cropper(image, {
+            viewMode: 2, // Set the view mode to 'crop'
+        });
+
+
+        const fileInput = document.getElementById('file');
+        fileInput.addEventListener('change', function (e) {
+            handleImageChange(e.target);
+        });
+        
+        // Add the event listener for the camera input
+        const cameraInput = document.getElementById('camera_input');
+        cameraInput.addEventListener('change', function (e) {
+            handleImageChange(e.target);
+        });
+
+        function submitCroppedImages() {
+            form = document.getElementsByTagName('pform')[0];
+
+            // Set the formdata object to the cropped image data
+            const formData = new FormData(form);
+
+            // Get the cropped canvas
+            formData.append('image_data', cropper.getCroppedCanvas().toDataURL());
+
+            const hideenImageData = document.getElementById('image_data');
+            hideenImageData.value = cropper.getCroppedCanvas().toDataURL();
+
+            // Submit the form
+            form.submit();
+        }
+    </script>
 </body>
 </html>
