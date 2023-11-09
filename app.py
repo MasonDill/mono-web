@@ -57,29 +57,6 @@ def delete_file(path):
     os.remove("/" +path)
     return "Deleted", 200
 
-@app.route('/example/', methods=['GET'])
-def rem_file():
-    input_file_path = os.path.join(temp_path, "handwritten.jpeg")
-
-    # generate the output file
-    results = image_to_out(input_file_path, 'mei', 'wav')
-    
-    # read the semantic file
-    semantic_file = open(results[0], 'r')
-    semantic = semantic_file.read()
-    semantic_file.close()
-    semantic = semantic.strip()
-    semantic = semantic.replace('\n', '\t')
-
-    #read the mei file
-    mei_file = open(results[1], 'r')
-    mei = mei_file.read()
-    mei_file.close()
-
-    # Render the output html
-    return render_template('output.html', input_image_path=input_file_path, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei)
-
-
 @app.route('/upload', methods=['POST'])
 def upload_file():
     # Access the data URL from the form
