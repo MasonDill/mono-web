@@ -10,7 +10,7 @@ from PIL import Image
 import io
 import base64
 
-IMAGE_PATH, MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None
+IMAGE_PATH, MODEL_DIRECTORY, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None
 HOME_PATH = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__)
@@ -28,7 +28,25 @@ def remove_files(files):
 
 @app.route('/')
 def home():
-    return render_template('upload.html')
+    # Get the models from the model directory
+    models = []
+    for file in os.listdir(MODEL_DIRECTORY):
+        if file.endswith(".meta"):
+            models.append(file)
+
+    # Order the models by name
+    # models.sort()
+
+    # Order the models by date
+    models.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIRECTORY, x)), reverse=True)
+    
+
+    dates = []
+    for model in models:
+        date = time.ctime(os.path.getmtime(os.path.join(MODEL_DIRECTORY, model)))
+        dates.append(date)
+
+    return render_template('upload.html', models=models, dates=dates)
 
 @app.route('/retrieve/<path:path>')
 def generate_image(path):
@@ -66,6 +84,12 @@ def rem_file():
 def upload_file():
     # Access the data URL from the form
     data_url = request.form.get('image_data')
+    model_file_name = request.form.get('model_data')
+
+    if model_file_name is None or model_file_name == "":
+        return "No model selected.", 400
+    
+    model_path = MODEL_DIRECTORY + "/" + model_file_name
 
     if data_url:
         try:
@@ -99,7 +123,7 @@ def upload_file():
     image.save(temp_image_filepath)  # Adjust the filename and format as needed
 
     # generate the output file
-    results = image_to_out(temp_image_filepath, 'mei', 'wav')
+    results = image_to_out(temp_image_filepath, model_path, 'mei', 'wav')
     
     # read the semantic file
     semantic_file = open(results[0], 'r')
@@ -134,21 +158,24 @@ def xml_to_mei(xml_file_path, mei_file_path=None, remove_xml=False):
     if remove_xml:
         os.remove(xml_file_path)
 
-def predict(image_path):
+def predict(image_path, model_path):
     current_ts = get_timestamp()
     semantic_output_file = SEMANTIC_PATH + "temp" +current_ts + ".semantic"
     
     #run the prediction
-    command = PYTHON3_PATH + " " + CTC_PREDICT_PATH + " -model " + MODEL_PATH + " -image " + image_path + " -vocabulary " + VOCAB_PATH + " > " + semantic_output_file
+    command = PYTHON3_PATH + " " + CTC_PREDICT_PATH + " -model " + model_path + " -image " + image_path + " -vocabulary " + VOCAB_PATH + " > " + semantic_output_file
     print(">" +command)
     subprocess.call(command, shell=True)
     print("---\n")
 
     return semantic_output_file
 
-def semantic_to_IL(semantic_path, il):    
+def semantic_to_IL(semantic_path, il, model_path=None):   
+    if model_path is None:
+        model_path = "unknown"
+
     il_output_file = IL_PATH + "temp" +get_timestamp()
-    command = PYTHON3_PATH + " " + S2M_PATH + " " + semantic_path + " -type xml" +" -o " + il_output_file +" --title " +get_timestamp() + " --artist " +(MODEL_PATH.split("/")[-1].split(".")[0])
+    command = PYTHON3_PATH + " " + S2M_PATH + " " + semantic_path + " -type xml" +" -o " + il_output_file +" --title " +get_timestamp() + " --artist " +(model_path.split("/")[-1].split(".")[0])
     print(">" +command)
     subprocess.call(command, shell=True)
     print("---\n")
@@ -180,12 +207,12 @@ def IL_to_image(IL_file, IL):
 
     return image_filepath
 
-def image_to_out(image_path, il="mei", out_type="wav"):
-    semantic_file_path = predict(image_path)
+def image_to_out(image_path, model_path, il="mei", out_type="wav"):
+    semantic_file_path = predict(image_path, model_path)
     if not os.path.exists(semantic_file_path): 
         return (None, None, None, None)
     
-    il_file_path = semantic_to_IL(semantic_file_path, il)
+    il_file_path = semantic_to_IL(semantic_file_path, il, model_path)
     if not os.path.exists(il_file_path+".mei"): 
         return (semantic_file_path, None, None, None)
     
@@ -203,7 +230,7 @@ if __name__ == '__main__':
     # Read the file paths from config.json
     with open(HOME_PATH +'/config.json') as json_file:
         data = json.load(json_file)
-        MODEL_PATH = data['model_path']
+        MODEL_DIRECTORY = data['model_path']
         CTC_PREDICT_PATH = data['ctc_predict_path']
         S2M_PATH = data['S2M_path']
         VEROVIO_PATH = data['verovio_path']
@@ -219,7 +246,7 @@ if __name__ == '__main__':
     IMAGE_PATH = temp_path + "/images/"
 
     # Validate the file paths
-    for path in [MODEL_PATH, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, IMAGE_PATH, OUT_PATH, temp_path, UPLOAD_PATH ]:
+    for path in [MODEL_DIRECTORY, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, IMAGE_PATH, OUT_PATH, temp_path, UPLOAD_PATH ]:
         if not os.path.exists(path):
             print("Path does not exist: \"" +path +"\"")
             if(input("Would you like to continue? [y/N] ") != 'y'):
