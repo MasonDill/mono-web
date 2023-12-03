@@ -13,6 +13,9 @@ import base64
 IMAGE_PATH, MODEL_DIRECTORY, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None
 HOME_PATH = os.path.dirname(os.path.realpath(__file__))
 
+TEMPO_LOWER_BOUND = 1
+TEMPO_UPPER_BOUND = 300
+INSTRUMENTS = ["Guitar", "Mandolin", "Violin"]
 app = Flask(__name__)
 
 def tar_files(files):
@@ -46,11 +49,47 @@ def home():
         date = time.ctime(os.path.getmtime(os.path.join(MODEL_DIRECTORY, model)))
         dates.append(date)
 
-    return render_template('upload.html', models=models, dates=dates)
+    return render_template('upload.html', models=models, dates=dates, instruments=INSTRUMENTS)
 
 @app.route('/retrieve/<path:path>')
 def generate_image(path):
+    if not "monophonic-webserver" in path:
+        return "Illegal Access.", 404
     return send_file("/" +path)
+
+@app.route('/update', methods=['POST'])
+def update():
+    # Get the filename of the source
+    mei_path = request.form.get('mei_path')
+    audio_path = request.form.get('audio_path')
+    # Get the instrument and tempo from the form
+    instrument = request.form.get('instrument_data')
+    tempo = request.form.get('tempo_data')
+
+    # regenerate the audio file
+    if mei_path is None or mei_path == "" or not os.path.exists(mei_path):
+        return "MEI file does not exist.", 400
+    
+    if instrument is None or instrument == "":
+        return "Instrument does not exist.", 400
+    instrument = instrument.lower()
+    
+    if tempo is None or tempo == "":
+        return "No tempo provided.", 400
+    elif int(tempo) < TEMPO_LOWER_BOUND or int(tempo) > TEMPO_UPPER_BOUND:
+        return "Invalid tempo.", 400
+    tempo = int(tempo)
+
+    # clean up old files
+    for old_file in os.listdir('temp/out'):
+        os.remove(os.path.join('temp/out', old_file))
+
+    modified_timestamp = get_timestamp()
+    audio_path = mei_path.split('.')[0] +'_' +modified_timestamp +'.wav'
+    audio_path = audio_path.replace('temp/il/', 'temp/out/')
+    
+    update_IL_to_out(mei_path, audio_path, instrument=instrument, tempo=tempo)
+    return audio_path, 200
 
 @app.route('/delete/<path:path>')
 def delete_file(path):
@@ -62,11 +101,23 @@ def upload_file():
     # Access the data URL from the form
     data_url = request.form.get('image_data')
     model_file_name = request.form.get('model_data')
+    instrument = request.form.get('instrument_data')
+    tempo = request.form.get('tempo_data')
 
+    #Check the inputs from the http request
     if model_file_name is None or model_file_name == "":
         return "No model selected.", 400
-    
     model_path = MODEL_DIRECTORY + "/" + model_file_name
+    
+    if instrument is None or instrument == "":
+        return "No instrument selected.", 400
+    instrument = instrument.lower()
+    
+    if tempo is None or tempo == "":
+        return "No tempo provided.", 400
+    elif int(tempo) < TEMPO_LOWER_BOUND or int(tempo) > TEMPO_UPPER_BOUND:
+        return "Invalid tempo.", 400
+    tempo = int(tempo)
 
     if data_url:
         try:
@@ -100,7 +151,7 @@ def upload_file():
     image.save(temp_image_filepath)  # Adjust the filename and format as needed
 
     # generate the output file
-    results = image_to_out(temp_image_filepath, model_path, 'mei', 'wav')
+    results = image_to_out(temp_image_filepath, model_path, il='mei', out_type='wav', instrument=instrument, tempo=tempo)
     
     # read the semantic file
     semantic_file = open(results[0], 'r')
@@ -115,7 +166,7 @@ def upload_file():
     mei_file.close()
 
     # Render the output html
-    return render_template('output.html', input_image_path=temp_image_filepath, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei)
+    return render_template('output.html', input_image_path=temp_image_filepath, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei, mei_path=results[1], tempo=tempo, instruments=INSTRUMENTS, instrument=instrument)
 
 def get_timestamp():
     date_string =  datetime.now().strftime("%Y%m%d%H%M%S")
@@ -162,29 +213,38 @@ def semantic_to_IL(semantic_path, il, model_path=None):
 
     return il_output_file
 
-def IL_to_out(IL_file, IL, out_type):    
+def IL_to_out(IL_file, IL, out_type, instrument="mandolin", tempo=60):    
     timestamp = get_timestamp()
     output_filepath = OUT_PATH + "temp" +timestamp + "." +out_type
 
-    command = PYTHON3_PATH + " " +AUDIO_GENERATOR_PATH + " " + IL_file + "." + IL + " -out " + output_filepath
+    command = PYTHON3_PATH + " " +AUDIO_GENERATOR_PATH + " -instrument " +instrument + " -tempo " +str(tempo) + " " + IL_file + "." + IL + " -out " + output_filepath
     print(">" +command)
     subprocess.call(command, shell=True)
     print("---\n")
 
     return output_filepath
 
-def IL_to_image(IL_file, IL):
+def update_IL_to_out(IL_file, output_filepath, instrument="mandolin", tempo=60, ):
+    command = PYTHON3_PATH + " " +AUDIO_GENERATOR_PATH + " -instrument " +instrument + " -tempo " +str(tempo) + " " + IL_file + " -out " + output_filepath
+    print(">" +command)
+    subprocess.call(command, shell=True)
+    print("---\n")
+
+    return output_filepath
+
+def IL_to_image(IL_file, IL, image_height=500):
     timestamp = get_timestamp()
     image_filepath = IMAGE_PATH + "temp" +timestamp + ".svg"
 
-    command = VEROVIO_PATH + " -t svg -o " + image_filepath +" --page-height 500 " + IL_file + "." + IL
+    #TODO: Detect multi-rests and adjust the page height accordingly
+    command = VEROVIO_PATH + " -t svg -o " + image_filepath +" --page-height " +str(image_height) + " " + IL_file + "." + IL
     print(">" +command)
     subprocess.call(command, shell=True)
     print("---\n")
 
     return image_filepath
 
-def image_to_out(image_path, model_path, il="mei", out_type="wav"):
+def image_to_out(image_path, model_path, il="mei", out_type="wav", instrument="mandolin", tempo=60):
     semantic_file_path = predict(image_path, model_path)
     if not os.path.exists(semantic_file_path): 
         return (None, None, None, None)
@@ -197,7 +257,7 @@ def image_to_out(image_path, model_path, il="mei", out_type="wav"):
     if not os.path.exists(image_file_path):
         return (semantic_file_path, il_file_path + '.' +il, None, None)
     
-    output_file_path = IL_to_out(il_file_path, il, out_type)
+    output_file_path = IL_to_out(il_file_path, il, out_type, instrument, tempo)
     if not os.path.exists(output_file_path):
         return (semantic_file_path, il_file_path + '.' +il, image_file_path, None)
 

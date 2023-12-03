@@ -3,7 +3,7 @@
     "ctc_predict_path": "/home/mason/documents/ml_trainer/tf-end-to-end/ctc_predict.py",
     "S2M_path": "/home/mason/documents/ml_trainer/semantic_to_mei/semantic_to_mei.py",
     "verovio_path": "/usr/local/bin/verovio",
-    "audio_generator_path": "/home/mason/documents/ml_trainer/AudioGenerator/AudioGenerator.py",
+    "audio_generator_path": "/home/mason/documents/ml_trainer/audio_gen/AudioGenerator/AudioGenerator.py",
     "python3_path": "/usr/bin/python3",
     "vocab_path": "/home/mason/documents/ml_trainer/tf-end-to-end/Data/vocabulary_semantic.txt",
     "temp_path": "/home/mason/documents/ml_trainer/monophonic-webserver/temp",

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>OMR File Upload with Image Cropping</title>
+    <title>OMR File Upload</title>
     <!-- Add Bootstrap CSS link -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Add Cropper.js CSS and JS links -->
@@ -9,8 +9,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.11/cropper.min.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
     <style>
         body {
             width: auto; 
@@ -50,8 +52,8 @@
                         <div class="card-body">
                             <div class="form-group">
                                 <input type="file" accept="image/*" class="form-control-file" name="file" id="file" style="display: none;">
-                                <button type="button" class="btn btn-info btn-med" onclick="openFileInput()">
-                                    <span class="glyphicon glyphicon-folder-open"></span> Choose a File
+                                <button type="button" class="btn btn-info btn-med" onclick="openFileInput()" id="file-button">
+                                    <span class="glyphicon glyphicon-file"></span> Choose a File
                                 </button>
                                 
                             </div>
@@ -59,7 +61,7 @@
                                 <h3>Or</h3>
                                 <input type="file" accept="image/*" capture="environment" class="form-control-file" name="camera_input" id="camera_input"style="display: none;">
                                 <canvas id="camera_input" style="display: none;"></canvas>
-                                <button type="button" class="btn btn-info btn-med" onclick="openCameraInput()">
+                                <button type="button" class="btn btn-info btn-med" onclick="openCameraInput()" id="camera-button">
                                     <span class="glyphicon">&#xe046;</span> Take a Picture
                                 </button>
                             </div>
@@ -70,13 +72,45 @@
     </div>
     <div class="container mt-5" hidden="true" name="cropping_area", id="cropping_area">
         <!-- Allow the User to Select a Model-->
-        <div class="form-group">
-            <label for="model">Select a Model:</label>
-            <select class="form-control" id="model" name="model">
-                {% for i in range(models|length) %}
-                <option value="{{ models[i] }}">{{ models[i] }} ({{ dates[i] }})</option>
-                {% endfor %}
-            </select>
+        <div class="row justify-content-center" name="parameter_area", id="parameter_area">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="model">Select a Model:</label>
+                    <select class="form-control" id="model" name="model">
+                        {% for i in range(models|length) %}
+                        <option value="{{ models[i] }}">{{ models[i] }} ({{ dates[i] }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="instrument">Select an Instrument:</label>
+                    <select class="form-control" id="instrument" name="instrument">
+                        {% for i in range(instruments|length) %}
+                        <option value="{{ instruments[i] }}">{{ instruments[i] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" name="tempo_area">
+                    <label for="numeric-slider">Tempo: </label>
+                    <br>
+                    
+                    <input type="range" id="numeric-slider" name="numeric-slider" min="1" max="300" value="60">
+                    <input type="number" id="numeric-input" name="numeric-input" min="1" max="300" value="60">
+                    <label> bpm</label>
+
+                    <script>
+                        // Add event listeners to keep the slider and input in sync
+                        document.getElementById('numeric-slider').addEventListener('input', function() {
+                            document.getElementById('numeric-input').value = this.value;
+                        });
+    
+                        document.getElementById('numeric-input').addEventListener('input', function() {
+                            document.getElementById('numeric-slider').value = this.value;
+                        });
+                    </script>
+                </div>
+                
+            </div>
         </div>
         <form method="POST" action="/upload" enctype="multipart/form-data" name="pform" id="pform">
             <!-- Add an image preview and cropping area -->
@@ -86,13 +120,16 @@
                     <img id="croppedImage" alt="Cropped Image">
                     <input type="hidden" name="image_data" id="image_data">
                     <input type="hidden" name="model_data" id="model_data">
+                    <input type="hidden" name="instrument_data" id="instrument_data">
+                    <input type="hidden" name="tempo_data" id="tempo_data">
                 </div>
             </div>
             <br>
             <div class="text-center mt-3">
-                <button type="submit" class="btn btn-primary btn-lg" onclick="submitCroppedImages()" >Upload and Process</button>
+                <button type="submit" class="btn btn-primary btn-lg" onclick="submitCroppedImages()" id="submission-button" >Upload and Process</button>
                 <br>
             </div>
+            
         </form>
     </div>
     <footer class="mt-5">
@@ -102,9 +139,8 @@
          Published OMR Models: <a href="https://huggingface.co/MasonDill/Monophonic_OMR">https://huggingface.co/MasonDill/Monophonic_OMR</a></p>
     </footer>
     <!-- Add Bootstrap JS and jQuery links for enhanced functionality -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
     <script>
         function handleImageChange(input) {
             const file = input.files[0];
@@ -165,15 +201,29 @@
             const hideenImageData = document.getElementById('image_data');
             hideenImageData.value = cropper.getCroppedCanvas().toDataURL();
 
-            // Get the model name
+            // Get the parameters from the form
             const model = document.getElementById('model');
+            const instrument = document.getElementById('instrument');
+            const tempo = document.getElementById('numeric-input');
             formData.append('model', model.value);
+            formData.append('instrument', instrument.value);
+            formData.append('tempo', tempo.value);
 
+            // Set the hidden form values
             const hiddenModel = document.getElementById('model_data');
             hiddenModel.value = model.value;
 
+            const hiddenInstrument = document.getElementById('instrument_data');
+            hiddenInstrument.value = instrument.value;
+
+            const hiddenTempo = document.getElementById('tempo_data');
+            hiddenTempo.value = tempo.value;
+            //Show the loading animation
+            document.getElementById('submission-button').innerHTML = 'Processing <span class="spinner-border spinner-border-lg" role="status" aria-hidden="true"></span>';
+            
             // Submit the form
             form.submit();
+            
         }
 
         function openCameraInput() {

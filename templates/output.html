@@ -6,9 +6,29 @@
     <title>OMR Results</title>
     <!-- Include Bootstrap 5 CSS from a CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <style>
         .text-left {
             text-align: left; /* Left-justify headers */
+        }
+        #special-link {
+            color: inherit; /* Use the same color as the parent element (paragraph) */
+            text-decoration: inherit; /* Inherit text decoration from the parent element */
+        }
+        #collapsible-text {
+            margin-top: calc(1vh);
+            display: none;
+        }
+        #update-content-btn {
+            margin-top: calc(1vh);
+        }
+        #new-image-area {
+            margin-top: calc(5vh);
+        }
+        .bold-line {
+            border: 1px solid black;
         }
     </style>
 </head>
@@ -18,7 +38,7 @@
             <h1 class="display-4 text-left">Input Image</h1>
             <img src="/retrieve{{ input_image_path }}" alt="Image" class="img-fluid mx-auto">
         </div>
-        <hr>
+        <hr class="bold-line">
         
         <div class="mb-4">
             <h1 class="display-4 text-left">Model Output</h1>
@@ -28,31 +48,126 @@
                 </div>
             </div>
         </div>
-        <hr>
+        <hr class="bold-line">
         
         <div class="mb-4">
             <h1 class="display-4 text-left">Encoded to MEI</h1>
             <img src="/retrieve{{ output_image_path }}" alt="Image" class="img-fluid mx-auto">
         </div>
         <div class="mb-4">
-            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapsible-text">
-                View Raw
+            <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapsible-text">
+                <span class="glyphicon glyphicon-search"></span> View MEI 
+            </button>
+            <button class="btn btn-info" type="button">
+                <a id="special-link" href="/retrieve{{ mei_path }}"><span class="glyphicon glyphicon-download"></span> Download MEI</a>
             </button>
             <div id="collapsible-text" class="collapse">
                 <textarea class="form-control" rows="10">{{ mei }}</textarea>
             </div>
         </div>
-        <hr>
-        
-        <div class="mb-4">
+        <hr class="bold-line">
+        <div class="row justify-content-center" name="audio_area", id="audio_area">
             <h1 class="display-4 text-left">Audio</h1>
-            <div class="row justify-content-center">
+            <!-- Show the audio -->
+            <div class="row justify-content-center" id="audio-playback">
                 <div class="col-md-8">
-                    <audio controls class="w-100">
+                    <audio controls headers="Cache-Control: no-cache, no-store, must-revalidate" class="w-100" id="audio-playback-controls">
                         <source src="/retrieve{{ output_audio_path }}" type="audio/wav">
                         Your browser does not support the audio element.
                     </audio>
                 </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="instrument">Select an Instrument:</label>
+                    <select class="form-control" id="instrument" name="instrument">
+                        {% for i in range(instruments|length) %}
+                        <option value="{{ instruments[i] }}">{{ instruments[i] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" name="tempo_area">
+                <label for="numeric-slider">Tempo: </label>
+                <br>
+                
+                <input type="range" id="numeric-slider" name="numeric-slider" min="1" max="300" value="{{tempo}}">
+                <input type="number" id="numeric-input" name="numeric-input" min="1" max="300" value="{{tempo}}">
+                <label> bpm</label>
+                <br>
+                <script>
+                    // Add event listeners to keep the slider and input in sync
+                    document.getElementById('numeric-slider').addEventListener('input', function() {
+                        document.getElementById('numeric-input').value = this.value;
+                    });
+                    document.getElementById('numeric-input').addEventListener('input', function() {
+                        document.getElementById('numeric-slider').value = this.value;
+                    });
+                </script>
+                <!-- Button to trigger content update -->
+                <button class="btn btn-info" type="button" id="update-content-btn">Update Audio</button>
+                <!-- Your custom JavaScript -->
+                <script>
+                    // Function to update media content using AJAX
+                    async function updateMediaContent() {
+                        response = await $.ajax({
+                            url: '/update',
+                            data: {
+                                mei_path: '{{ mei_path }}',
+                                instrument_data: $('#instrument').val(),
+                                tempo_data: $('#numeric-input').val()
+                            },
+                            type: 'post',
+                            success: function(data) {
+                                var spinButton = document.getElementById('update-content-btn');
+                                var spinSlider = document.getElementById('numeric-slider');
+                                var spinInput = document.getElementById('numeric-input');
+                                var spinDrop = document.getElementById('instrument');
+                                var spinAudio = document.getElementById('audio-playback-controls');
+                                spinButton.disabled = false;
+                                spinSlider.disabled = false;
+                                spinInput.disabled = false;
+                                spinDrop.disabled = false;
+                                spinAudio.disabled = false;
+                                spinButton.innerHTML = 'Update Audio';
+                            }
+                        });
+
+                        new_audio_path = String(response);
+                        $('#audio-playback-controls').attr('src', '/retrieve/' + new_audio_path);
+                    }
+
+                    // Call the function on page load
+                    $(document).ready(function() {                        
+                        // Bind the function to the button click event
+                        $('#update-content-btn').click(function() {
+                            var spinButton = document.getElementById('update-content-btn');
+                            var spinSlider = document.getElementById('numeric-slider');
+                            var spinInput = document.getElementById('numeric-input');
+                            var spinDrop = document.getElementById('instrument');
+                            var spinAudio = document.getElementById('audio-playback-controls');
+
+                            $('#audio-playback-controls').attr('src', '');
+
+                            // Disable the button during the animation
+                            spinButton.disabled = true;
+                            spinSlider.disabled = true;
+                            spinInput.disabled = true;
+                            spinDrop.disabled = true;
+                            
+                            spinButton.innerHTML = 'Synthesizing <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                            updateMediaContent();
+                        });
+                    });
+                </script>
+            </div>
+        </div>
+        <br>
+        <!--Exit button-->
+        <div class="row justify-content-center" id="new-image-area">
+            <div class="col-md-5">
+                <button class="btn btn-primary btn-lg" type="button">
+                    <a id="special-link" class="special-link" href="/"> Try a new Image</a>
+                </button>
             </div>
         </div>
     </div>
