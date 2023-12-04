@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, send_file
 import os
 import sys
 import time
+import random
 from datetime import datetime
 import subprocess
 import json
@@ -11,6 +12,7 @@ import io
 import base64
 
 IMAGE_PATH, MODEL_DIRECTORY, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, OUT_PATH, UPLOAD_PATH = None, None, None, None, None, None, None, None, None, None, None, None
+EXAMPLES_PATH, PRIMUS_PATH = None, None
 HOME_PATH = os.path.dirname(os.path.realpath(__file__))
 
 TEMPO_LOWER_BOUND = 1
@@ -42,7 +44,10 @@ def home():
 
     # Order the models by date
     models.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIRECTORY, x)), reverse=True)
-    
+ 
+    if "Camera-PrIMuS_hybrid_semantic_v1-10-10.meta" in models:
+        models.remove("Camera-PrIMuS_hybrid_semantic_v1-10-10.meta")
+        models.insert(0, "Camera-PrIMuS_hybrid_semantic_v1-10-10.meta")
 
     dates = []
     for model in models:
@@ -50,6 +55,68 @@ def home():
         dates.append(date)
 
     return render_template('upload.html', models=models, dates=dates, instruments=INSTRUMENTS)
+
+@app.route('/example-image')
+def example_image():
+    # Return a random image from the example images directory
+    example_images = []
+    image_path = EXAMPLES_PATH + "/Examples/"
+    for file in os.listdir(image_path):
+        example_images.append(file)
+    
+    image_path += str(random.choice(example_images))
+    return send_file(image_path)
+
+@app.route('/score-image')
+def score_image():
+    # Return a random image from the score images directory
+    score_images = []
+    image_path = EXAMPLES_PATH + "/Scores/"
+    for file in os.listdir(image_path):
+        score_images.append(file)
+   
+    image_path += str(random.choice(score_images))
+    return send_file(image_path)
+
+@app.route('/test-image')
+def test_image():
+    # Return a random image from primus dataset
+    test_images = []
+    for folder in os.listdir(PRIMUS_PATH):
+        test_images.append(folder)
+
+    test_image = str(random.choice(test_images))
+    image_path = PRIMUS_PATH + "/" +test_image +"/" +test_image +".png"
+    return send_file(image_path)
+
+@app.route('/examples')
+def examples():
+    # Get the models from the model directory
+    models = []
+    for file in os.listdir(MODEL_DIRECTORY):
+        if file.endswith(".meta"):
+            models.append(file)
+
+    # Order the models by name
+    # models.sort()
+
+    # Order the models by date
+    models.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIRECTORY, x)), reverse=True)
+
+    if "Camera-PrIMuS_hybrid_semantic_v1-10-10.meta" in models:
+        models.remove("Camera-PrIMuS_hybrid_semantic_v1-10-10.meta")
+        models.insert(0, "Camera-PrIMuS_hybrid_semantic_v1-10-10.meta")
+
+    dates = []
+    for model in models:
+        date = time.ctime(os.path.getmtime(os.path.join(MODEL_DIRECTORY, model)))
+        dates.append(date)
+
+   
+
+    print(models)
+
+    return render_template('examples.html', models=models, dates=dates, instruments=INSTRUMENTS)
 
 @app.route('/retrieve/<path:path>')
 def generate_image(path):
@@ -276,6 +343,8 @@ if __name__ == '__main__':
         VOCAB_PATH = data['vocab_path']
         temp_path = data['temp_path']
         UPLOAD_PATH = data['upload_path']
+        EXAMPLES_PATH = data['examples_path']
+        PRIMUS_PATH = data['primus_path']
 
     SEMANTIC_PATH = temp_path + "/semantic/"
     IL_PATH = temp_path + "/il/"
@@ -283,7 +352,7 @@ if __name__ == '__main__':
     IMAGE_PATH = temp_path + "/images/"
 
     # Validate the file paths
-    for path in [MODEL_DIRECTORY, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, IMAGE_PATH, OUT_PATH, temp_path, UPLOAD_PATH ]:
+    for path in [PRIMUS_PATH, EXAMPLES_PATH, MODEL_DIRECTORY, CTC_PREDICT_PATH, S2M_PATH, VEROVIO_PATH, AUDIO_GENERATOR_PATH, PYTHON3_PATH, VOCAB_PATH, SEMANTIC_PATH, IL_PATH, IMAGE_PATH, OUT_PATH, temp_path, UPLOAD_PATH ]:
         if not os.path.exists(path):
             print("Path does not exist: \"" +path +"\"")
             if(input("Would you like to continue? [y/N] ") != 'y'):

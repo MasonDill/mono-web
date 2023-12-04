@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>OMR File Upload</title>
+    <title>OMR Examples</title>
     <!-- Add Bootstrap CSS link -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Add Cropper.js CSS and JS links -->
@@ -47,22 +47,22 @@
             <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h1 class="text-center">Upload an Image</h1>
+                            <h1 class="text-center">Select an Example</h1>
                         </div>
                         <div class="card-body">
                             <div class="form-group">
-                                <input type="file" accept="image/*" class="form-control-file" name="file" id="file" style="display: none;">
-                                <button type="button" class="btn btn-info btn-med" onclick="openFileInput()" id="file-button">
-                                    <span class="glyphicon glyphicon-file"></span> Choose a File
+                                <button type="button" class="btn btn-info btn-med" onclick="openTest()" id="test-button">
+                                    <span class="glyphicon glyphicon-tag"></span> PrIMus Image
                                 </button>
-                                
                             </div>
                             <div class="form-group">
-                                <h3>Or</h3>
-                                <input type="file" accept="image/*" capture="environment" class="form-control-file" name="camera_input" id="camera_input"style="display: none;">
-                                <canvas id="camera_input" style="display: none;"></canvas>
-                                <button type="button" class="btn btn-info btn-med" onclick="openCameraInput()" id="camera-button">
-                                    <span class="glyphicon">&#xe046;</span> Take a Picture
+                                <button type="button" class="btn btn-info btn-med" onclick="openExample()" id="example-button">
+                                    <span class="glyphicon glyphicon-ok"></span> Verified example
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-info btn-med" onclick="openScore()" id="score-button">
+                                    <span class="glyphicon glyphicon-pencil"></span> Make your own
                                 </button>
                             </div>
                         </div>
@@ -70,12 +70,12 @@
             </div>
             
         </div>
-        <div class="row justify-content-center" id="examples-area">
+        <div class="row justify-content-center" id="uploads-area">
             <div class="col-md-4">
                 <!-- Your existing content goes here -->
             </div>
             <div class="col-md-auto">
-                <a href="https://omr.dill.lol/examples">Or try an example</a>
+                <a href="https://omr.dill.lol/">Or upload an image</a>
             </div>
         </div>
         
@@ -153,8 +153,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
     
     <script>
-        function handleImageChange(input) {
-            const file = input.files[0];
+        function handleImageChange(file) {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -165,19 +164,13 @@
 
                 // Show the cropping area
                 document.getElementById('cropping_area').hidden = false;
-                document.getElementById('examples-area').hidden = true;               
+                document.getElementById('uploads-area').hidden = true;               
             }
-        }
-        
-        function openCameraInput() {
-            // Trigger the click event on the camera input element
-            const cameraInput = document.getElementById('camera_input');
-            cameraInput.click();
         }
         
         // Initialize Cropper.js and add the event listener for the 'file' input
         const image = document.getElementById('croppedImage');
-        const cropper = new Cropper(image, {
+        var cropper = new Cropper(image, {
             viewMode: 2, // Set the view mode to 'crop'
             ready() {
                 cropper.setCropBoxData({
@@ -187,18 +180,6 @@
                     height: 0xFFFFFFFF,
                 });
             },
-        });
-
-
-        const fileInput = document.getElementById('file');
-        fileInput.addEventListener('change', function (e) {
-            handleImageChange(e.target);
-        });
-        
-        // Add the event listener for the camera input
-        const cameraInput = document.getElementById('camera_input');
-        cameraInput.addEventListener('change', function (e) {
-            handleImageChange(e.target);
         });
 
         function submitCroppedImages() {
@@ -238,13 +219,58 @@
             
         }
 
-        function openCameraInput() {
-            document.getElementById('camera_input').click();
+        function openExample() {
+            // Perform a GET request to get the example image, then pass it to handleImageChange
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/example-image');
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                const file = new File([this.response], 'example.png');
+                handleImageChange(file);
+            };
+            xhr.send();
+
+            
+            // Show the cropping area
+            document.getElementById('cropping_area').hidden = false;
+            document.getElementById('uploads-area').hidden = true;
+
+        }
+        function openTest() {
+            // Perform a GET request to get the example image, then pass it to handleImageChange
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/test-image');
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                console.log(this.response)
+                const file = new File([this.response], 'example.png');
+                // put the image in the cropping area
+                handleImageChange(file);
+            };
+            xhr.send();
+
+            // Show the cropping area
+            document.getElementById('cropping_area').hidden = false;
+            document.getElementById('uploads-area').hidden = true;
+
+        }
+        function openScore() {
+            // Perform a GET request to get the example image, then pass it to handleImageChange
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/score-image');
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                const file = new File([this.response], 'example.png');
+                handleImageChange(file);    
+            };
+            xhr.send();
+
+            // Show the cropping area
+            document.getElementById('cropping_area').hidden = false;
+            document.getElementById('uploads-area').hidden = true;
+            
         }
 
-        function openFileInput() {
-            document.getElementById('file').click();
-        }
     </script>
 </body>
 </html>
