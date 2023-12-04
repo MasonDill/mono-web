@@ -3,6 +3,11 @@ import os
 import sys
 import time
 import random
+
+sys.path.append('/home/mason/documents/ml_trainer/tf-end-to-end')
+
+# Now you can import the module
+import ctc_predict
 from datetime import datetime
 import subprocess
 import json
@@ -258,10 +263,18 @@ def predict(image_path, model_path):
     semantic_output_file = SEMANTIC_PATH + "temp" +current_ts + ".semantic"
     
     #run the prediction
-    command = PYTHON3_PATH + " " + CTC_PREDICT_PATH + " -model " + model_path + " -image " + image_path + " -vocabulary " + VOCAB_PATH + " > " + semantic_output_file
-    print(">" +command)
-    subprocess.call(command, shell=True)
-    print("---\n")
+    # command = PYTHON3_PATH + " " + CTC_PREDICT_PATH + " -model " + model_path + " -image " + image_path + " -vocabulary " + VOCAB_PATH + " > " + semantic_output_file
+    # print(">" +command)
+    # subprocess.call(command, shell=True)
+    # print("---\n")
+
+    # run the prediction
+    semantic_prediction = ctc_predict.predict(image_path, model_path, VOCAB_PATH)
+
+    # save the semantic output
+    semantic_file = open(semantic_output_file, 'w')
+    semantic_file.write(semantic_prediction)
+    semantic_file.close()
 
     return semantic_output_file
 
