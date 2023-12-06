@@ -1,0 +1,13 @@
+{
+    "model_path": "V:/Music/Mason/project/web_models/",
+    "ctc_predict_path": "P:/project/tf-end-to-end/ctc_predict.py",
+    "S2M_path": "V:/Music/Mason/project/semantic_to_mei/semantic_to_mei.py",
+    "verovio_path": "V:/Music/Mason/project/verovio/.gitignore",
+    "audio_generator_path": "V:/Music/Mason/project/AudioGenerator/AudioGenerator.py",
+    "python_path": "C:/Users/Mason/AppData/Local/Programs/Python/Python311/python.exe",
+    "python3_path": "C:/Users/Mason/AppData/Local/Programs/Python/Python311/python.exe",
+    "vocab_path": "V:/Music/Mason/project/tf-end-to-end/Data/vocabulary_semantic.txt",
+    "temp_path": "V:/Music/Mason/project/mono-web/temp",
+    "upload_path": "V:/Music/Mason/project/mono-web/uploads",
+    "primus_path": "P:/project/datasets/CameraPrIMuS/Corpus"
+}

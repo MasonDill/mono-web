@@ -4,7 +4,7 @@ import sys
 import time
 import random
 
-sys.path.append('/home/mason/documents/ml_trainer/tf-end-to-end')
+sys.path.append('P:/project/tf-end-to-end')
 
 # Now you can import the module
 import ctc_predict
@@ -121,15 +121,13 @@ def examples():
         date = time.ctime(os.path.getmtime(os.path.join(MODEL_DIRECTORY, model)))
         dates.append(date)
 
-   
-
     print(models)
 
     return render_template('examples.html', models=models, dates=dates, instruments=INSTRUMENTS)
 
 @app.route('/retrieve/<path:path>')
 def generate_image(path):
-    if not "monophonic-webserver" in path:
+    if (not "monophonic-webserver" in path) and (not "mono-web" in path):
         return "Illegal Access.", 404
     return send_file("/" +path)
 
