@@ -61,6 +61,10 @@ def home():
 
     return render_template('upload.html', models=models, dates=dates, instruments=INSTRUMENTS)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_file('saved_music/Favicons/favicon.ico')
+
 @app.route('/example-image')
 def example_image():
     # Return a random image from the example images directory
@@ -160,8 +164,10 @@ def update():
     audio_path = mei_path.split('.')[0] +'_' +modified_timestamp +'.wav'
     audio_path = audio_path.replace('temp/il/', 'temp/out/')
     
-    update_IL_to_out(mei_path, audio_path, instrument=instrument, tempo=tempo)
-    return audio_path, 200
+    synth_log = str(update_IL_to_out(mei_path, audio_path, instrument=instrument, tempo=tempo))
+
+    # return the audio path and synth log to the client
+    return audio_path + " " +synth_log, 200
 
 @app.route('/delete/<path:path>')
 def delete_file(path):
@@ -237,8 +243,10 @@ def upload_file():
     mei = mei_file.read()
     mei_file.close()
 
+    synth_log = results[4].encode('utf-8')
+
     # Render the output html
-    return render_template('output.html', input_image_path=temp_image_filepath, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei, mei_path=results[1], tempo=tempo, instruments=INSTRUMENTS, instrument=instrument)
+    return render_template('output.html', input_image_path=temp_image_filepath, output_image_path=results[2], output_audio_path=results[3], semantic=semantic, mei=mei, mei_path=results[1], tempo=tempo, instruments=INSTRUMENTS, instrument=instrument, synth_log=synth_log)
 
 def get_timestamp():
     date_string =  datetime.now().strftime("%Y%m%d%H%M%S")
@@ -298,19 +306,23 @@ def IL_to_out(IL_file, IL, out_type, instrument="mandolin", tempo=60):
     output_filepath = OUT_PATH + "temp" +timestamp + "." +out_type
 
     command = PYTHON3_PATH + " " +AUDIO_GENERATOR_PATH + " -instrument " +instrument + " -tempo " +str(tempo) + " " + IL_file + "." + IL + " -out " + output_filepath
+    
     print(">" +command)
-    subprocess.call(command, shell=True)
+    synth_log = str(subprocess.getoutput(command))
     print("---\n")
 
-    return output_filepath
+    return output_filepath, synth_log
 
 def update_IL_to_out(IL_file, output_filepath, instrument="mandolin", tempo=60, ):
     command = PYTHON3_PATH + " " +AUDIO_GENERATOR_PATH + " -instrument " +instrument + " -tempo " +str(tempo) + " " + IL_file + " -out " + output_filepath
+
+    
     print(">" +command)
-    subprocess.call(command, shell=True)
+    synth_log = str(subprocess.getoutput(command))
+    subprocess.check_output
     print("---\n")
 
-    return output_filepath
+    return synth_log
 
 def IL_to_image(IL_file, IL, image_height=500):
     timestamp = get_timestamp()
@@ -337,11 +349,9 @@ def image_to_out(image_path, model_path, il="mei", out_type="wav", instrument="m
     if not os.path.exists(image_file_path):
         return (semantic_file_path, il_file_path + '.' +il, None, None)
     
-    output_file_path = IL_to_out(il_file_path, il, out_type, instrument, tempo)
-    if not os.path.exists(output_file_path):
-        return (semantic_file_path, il_file_path + '.' +il, image_file_path, None)
+    output_file_path, synth_log = IL_to_out(il_file_path, il, out_type, instrument, tempo)
 
-    return (semantic_file_path, il_file_path + '.' +il, image_file_path, output_file_path)
+    return (semantic_file_path, il_file_path + '.' +il, image_file_path, output_file_path, synth_log)
 
 if __name__ == '__main__':
     # Read the file paths from config.json
@@ -371,4 +381,4 @@ if __name__ == '__main__':
             if(input("Would you like to continue? [y/N] ") != 'y'):
                 sys.exit(1)
 
-    app.run(host='0.0.0.0', port=8890, debug=False)
+    app.run(host='0.0.0.0', port=8890, debug=True)

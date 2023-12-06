@@ -33,6 +33,7 @@
     </style>
 </head>
 <body>
+    <script>console.log('{{ synth_log }}')</script>
     <div class="container text-center py-5">
         <div class="mb-4">
             <h1 class="display-4 text-left">Input Image</h1>
@@ -109,6 +110,7 @@
                 <script>
                     // Function to update media content using AJAX
                     async function updateMediaContent() {
+                        // Request an update from the server
                         response = await $.ajax({
                             url: '/update',
                             data: {
@@ -132,8 +134,14 @@
                             }
                         });
 
-                        new_audio_path = String(response);
+                        str_response = String(response);
+                        var spaceIndex = str_response.indexOf(' ');
+
+                        var new_audio_path = str_response.substring(0, spaceIndex);
+                        var synth_log = str_response.substring(spaceIndex + 1);
+
                         $('#audio-playback-controls').attr('src', '/retrieve/' + new_audio_path);
+                        console.log(synth_log);
                     }
 
                     // Call the function on page load
