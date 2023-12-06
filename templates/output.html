@@ -37,7 +37,7 @@
     <div class="container text-center py-5">
         <div class="mb-4">
             <h1 class="display-4 text-left">Input Image</h1>
-            <img src="/retrieve{{ input_image_path }}" alt="Image" class="img-fluid mx-auto">
+            <img src="/retrieve/{{ input_image_path }}" alt="Image" class="img-fluid mx-auto">
         </div>
         <hr class="bold-line">
         
@@ -53,14 +53,14 @@
         
         <div class="mb-4">
             <h1 class="display-4 text-left">Encoded to MEI</h1>
-            <img src="/retrieve{{ output_image_path }}" alt="Image" class="img-fluid mx-auto">
+            <img src="/retrieve/{{ output_image_path }}" alt="Image" class="img-fluid mx-auto">
         </div>
         <div class="mb-4">
             <button class="btn btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapsible-text">
                 <span class="glyphicon glyphicon-search"></span> View MEI 
             </button>
             <button class="btn btn-info" type="button">
-                <a id="special-link" href="/retrieve{{ mei_path }}"><span class="glyphicon glyphicon-download"></span> Download MEI</a>
+                <a id="special-link" href="/retrieve/{{ mei_path }}"><span class="glyphicon glyphicon-download"></span> Download MEI</a>
             </button>
             <div id="collapsible-text" class="collapse">
                 <textarea class="form-control" rows="10">{{ mei }}</textarea>
@@ -73,7 +73,7 @@
             <div class="row justify-content-center" id="audio-playback">
                 <div class="col-md-8">
                     <audio controls headers="Cache-Control: no-cache, no-store, must-revalidate" class="w-100" id="audio-playback-controls">
-                        <source src="/retrieve{{ output_audio_path }}" type="audio/wav">
+                        <source src="/retrieve/{{ output_audio_path }}" type="audio/wav">
                         Your browser does not support the audio element.
                     </audio>
                 </div>

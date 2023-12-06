@@ -3,7 +3,7 @@
     "examples_path": "P:/project/mono-web/saved_music/",
     "ctc_predict_path": "P:/project/tf-end-to-end/ctc_predict.py",
     "S2M_path": "V:/Music/Mason/project/semantic_to_mei/semantic_to_mei.py",
-    "verovio_path": "V:/Music/Mason/project/verovio/.gitignore",
+    "verovio_path": "C:/Program Files (x86)/Verovio/bin/verovio.exe",
     "audio_generator_path": "V:/Music/Mason/project/AudioGenerator/AudioGenerator.py",
     "python3_path": "C:/Users/Mason/AppData/Local/Programs/Python/Python311/python.exe",
     "vocab_path": "P:/project/tf-end-to-end/Data/vocabulary_semantic.txt",

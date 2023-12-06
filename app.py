@@ -127,6 +127,8 @@ def examples():
 
 @app.route('/retrieve/<path:path>')
 def generate_image(path):
+    path = path[3:]
+    # Check if retrieve has a slash
     if (not "monophonic-webserver" in path) and (not "mono-web" in path):
         return "Illegal Access.", 404
     return send_file("/" +path)
@@ -224,7 +226,7 @@ def upload_file():
      # Save the image to a file
     temp_image_filepath = str(UPLOAD_PATH) + "/temp"
     temp_image_filepath += get_timestamp() + ".png"
-    image.save(temp_image_filepath)  # Adjust the filename and format as needed
+    image.save(temp_image_filepath, format="png")  # Adjust the filename and format as needed
 
     # generate the output file
     results = image_to_out(temp_image_filepath, model_path, il='mei', out_type='wav', instrument=instrument, tempo=tempo)
@@ -378,5 +380,7 @@ if __name__ == '__main__':
             print("Path does not exist: \"" +path +"\"")
             if(input("Would you like to continue? [y/N] ") != 'y'):
                 sys.exit(1)
+
+    VEROVIO_PATH = "\"" +VEROVIO_PATH +"\""
 
     app.run(host='0.0.0.0', port=8890, debug=True)
