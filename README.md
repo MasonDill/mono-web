@@ -3,7 +3,7 @@
   </p>
 <h2>Acknowledgments</h2>
   <p>I extend my gratitude to Calvo-Zaragoza, J. and Rizo, D., the Authors of End-to-End Neural Optical Music Recognition of Monophonic Scores. The ideas outlined in the paper, as well as the contributions to the primus dataset and the tf-end-to-end open-source code-base laid the groundwork for this exploration. This project builds upon their work extensively.</p>
-  <p>I would also like to thank my teammate throughout the semester, Margeret Kilmeyer (<a href=https://github.com/mak453>https://github.com/mak453</a>) for her work on the audio synthesizer. </p>
+  <p>I would also like to thank my teammate throughout the semester, <a href=https://github.com/mak453>https://github.com/mak453</a> for her work on the audio synthesizer. </p>
 <h2>Original OMR Source Code</h2>
   <p>The foundation of this project is based on the open-source TensorFlow code available at <a href="https://github.com/OMR-Research/tf-end-to-end">https://github.com/OMR-Research/tf-end-to-end</a>. The original code provided a starting point for my exploration into optical music recognition, and significant modifications have been made to enhance its utility.</p>
   <h2>Modified OMR Source Code</h2>
