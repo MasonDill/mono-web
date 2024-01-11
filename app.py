@@ -22,6 +22,7 @@ HOME_PATH = os.path.dirname(os.path.realpath(__file__))
 
 TEMPO_LOWER_BOUND = 1
 TEMPO_UPPER_BOUND = 300
+BUFF_SIZE = 30
 INSTRUMENTS = ["Guitar", "Mandolin", "Violin"]
 app = Flask(__name__)
 
@@ -32,9 +33,12 @@ def tar_files(files):
     subprocess.call(command, shell=True)
     return tar_file_path
 
-def remove_files(files):
-    for file in files:
-        os.remove(file)
+def remove_files(directory):
+    #remove all file in the directory excep the most recent 30 files.
+    files = os.listdir(directory)
+    files.sort(key=lambda x: os.path.getmtime(os.path.join(directory, x)))
+    for file in files[:-BUFF_SIZE]:
+        os.remove(os.path.join(directory, file))
 
 @app.route('/')
 def home():
@@ -157,8 +161,9 @@ def update():
     tempo = int(tempo)
 
     # clean up old files
-    for old_file in os.listdir('temp/out'):
-        os.remove(os.path.join('temp/out', old_file))
+    # for old_file in os.listdir('temp/out'):
+    #     os.remove(os.path.join('temp/out', old_file))
+    remove_files('temp/out')
 
     modified_timestamp = get_timestamp()
     audio_path = mei_path.split('.')[0] +'_' +modified_timestamp +'.wav'
@@ -212,16 +217,22 @@ def upload_file():
     
     # clean up old files
     os.chdir(HOME_PATH)
-    for old_file in os.listdir('uploads'):
-        os.remove(os.path.join('uploads', old_file))
-    for old_file in os.listdir('temp/semantic'):
-        os.remove(os.path.join('temp/semantic', old_file))
-    for old_file in os.listdir('temp/il'):
-        os.remove(os.path.join('temp/il', old_file))
-    for old_file in os.listdir('temp/out'):
-        os.remove(os.path.join('temp/out', old_file))
-    for old_file in os.listdir('temp/images'):
-        os.remove(os.path.join('temp/images', old_file))
+    # for old_file in os.listdir('uploads'):
+    #     os.remove(os.path.join('uploads', old_file))
+    # for old_file in os.listdir('temp/semantic'):
+    #     os.remove(os.path.join('temp/semantic', old_file))
+    # for old_file in os.listdir('temp/il'):
+    #     os.remove(os.path.join('temp/il', old_file))
+    # for old_file in os.listdir('temp/out'):
+    #     os.remove(os.path.join('temp/out', old_file))
+    # for old_file in os.listdir('temp/images'):
+    #     os.remove(os.path.join('temp/images', old_file))
+
+    remove_files('uploads')
+    remove_files('temp/semantic')
+    remove_files('temp/il')
+    remove_files('temp/out')
+    remove_files('temp/images')
 
      # Save the image to a file
     temp_image_filepath = str(UPLOAD_PATH) + "/temp"
