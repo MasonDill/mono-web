@@ -1,0 +1,10 @@
+config.json
+*.out
+!.gitkeep
+*.mei
+*.xml
+*.wav
+
+/temp/
+/saved_music/
+
